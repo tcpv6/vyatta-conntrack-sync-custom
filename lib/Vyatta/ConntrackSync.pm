@@ -185,6 +185,38 @@ sub proto_accept {
   return $output;
 }
 
+sub read_custom_options {
+  my %options;
+
+  my @sections = get_conntracksync_val( "listNodes", "custom-option" );
+
+  foreach my $section (@sections) {
+    my @options = get_conntracksync_val( "listNodes", "custom-option $section" );
+
+    foreach my $option (@options) {
+      my $value = get_conntracksync_val( "returnValue", "custom-option $section $option value" );
+
+      $options{$section}{$option} = $value;
+    }
+  }
+
+  return %options;
+}
+
+sub get_custom_options {
+  my ($section, %options) = @_;
+  my $tabs = "\t\t";
+  my $result = "";
+
+  $tabs = "\t" if ($section =~ /SYNC/);
+
+  foreach my $option (keys %{$options{$section}}) {
+    $result .= "$tabs"."$option $options{$section}{$option}\n";
+  }
+
+  return $result;
+}
+
 sub generate_conntrackd_config {
 
   my $expect_all_flag = 'false';
@@ -194,6 +226,7 @@ sub generate_conntrackd_config {
   my @intf_ip = Vyatta::Misc::getIP( $intf_name, '4' );
   my @iponly = split( '/', $intf_ip[0] );
   my $mcast_grp = get_conntracksync_val( "returnValue", "mcast-group" );
+  my %custom_options = read_custom_options;
 
   my $conntrack_table_size = `cat /proc/sys/net/netfilter/nf_conntrack_max`;
   my $cache_hash_size      = `cat /sys/module/nf_conntrack/parameters/hashsize`;
@@ -235,8 +268,10 @@ sub generate_conntrackd_config {
   # GENERATE SYNC SECTION
   $output .= "\n#\n# Synchronizer settings\n#\n";
   $output .= $SYNC_SECTION_START;
+  $output .= get_custom_options("SYNC", %custom_options);
 
   $output .= $MODE_SECTION_START;
+  $output .= get_custom_options("FTFW", %custom_options);
   # mode section end
   $output .= "\t$SECTION_END";
 
@@ -248,6 +283,7 @@ sub generate_conntrackd_config {
   $output .= "\t\tSndSocketBuffer $sync_queue_size\n";
   $output .= "\t\tRcvSocketBuffer $sync_queue_size\n";
   $output .= "\t\tChecksum on\n";
+  $output .= get_custom_options("MULTICAST", %custom_options);
   # multicast section end
   $output .= "\t$SECTION_END";
 
