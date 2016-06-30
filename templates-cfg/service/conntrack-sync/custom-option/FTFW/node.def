@@ -1,0 +1,4 @@
+tag:
+type: txt
+help: Set any option you want under FTFW
+val_help: OptionName; Set any option you want under FTFW
