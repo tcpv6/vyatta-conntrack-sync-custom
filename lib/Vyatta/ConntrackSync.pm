@@ -208,7 +208,7 @@ sub get_custom_options {
   my $tabs = "\t\t";
   my $result = "";
 
-  $tabs = "\t" if ($section =~ /SYNC/);
+  $tabs = "\t" if ($section =~ /SYNC|GENERAL/);
 
   foreach my $option (keys %{$options{$section}}) {
     $result .= "$tabs"."$option $options{$section}{$option}\n";
@@ -351,6 +351,7 @@ sub generate_conntrackd_config {
   $output .= "\tNetlinkBufferSizeMaxGrowth $event_listen_queue_size\n";
   $output .= "\tNetlinkOverrunResync Off\n";
   $output .= "\tNetlinkEventsReliable On\n";
+  $output .= get_custom_options("GENERAL", %custom_options);
 
   my $ipv4_ignore_list = address_ignore('4');
   my $proto_accept_list = proto_accept();
