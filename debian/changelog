@@ -1,3 +1,9 @@
+vyatta-conntrack-sync (0.48+vyos1+helium1) unstable; urgency=low
+
+  * Allowing Conntrackd sync to happen over UDP
+
+ -- Jason Hendry <jhendry@mintel.com>  Thu, 30 Jun 2016 17:43:00 +0100
+
 vyatta-conntrack-sync (0.47+vyos1+helium1) unstable; urgency=low
 
   * Bumping verson for new conntrackd options

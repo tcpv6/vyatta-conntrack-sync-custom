@@ -1,0 +1,8 @@
+type: txt
+
+help: Method to use for syncing states
+
+val_help: <method>;multicast(default) unicast
+
+syntax:expression: pattern $VAR(@) "^(multicast|unicast)$" ; \
+"Invalid value for sync-protocol. Allowed values : multicast unicast"
