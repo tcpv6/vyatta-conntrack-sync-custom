@@ -60,6 +60,7 @@ my $GENERAL_SECTION_START    = "General {\n";
 my $SYNC_SECTION_START       = "Sync {\n";
 my $MODE_SECTION_START       = "\tMode FTFW {\n";
 my $MULTICAST_SECTION_START  = "\tMulticast {\n";
+my $UDP_SECTION_START        = "\tUDP {\n";
 my $OPTIONS_SECTION_START    = "\tOptions {\n";
 my $OPTIONS_EXPECTATIONSYNC_START    = "\t\tExpectationSync {\n";
 
@@ -227,6 +228,9 @@ sub generate_conntrackd_config {
   my @iponly = split( '/', $intf_ip[0] );
   my $mcast_grp = get_conntracksync_val( "returnValue", "mcast-group" );
   my %custom_options = read_custom_options;
+  my $sync_method = get_conntracksync_val( "returnValue", "sync-method" );
+  my $udp_listen_addr = get_conntracksync_val( "returnValue", "udp-listen-address" );
+  my $udp_destination_addr = get_conntracksync_val( "returnValue", "udp-destination-address" );
 
   my $conntrack_table_size = `cat /proc/sys/net/netfilter/nf_conntrack_max`;
   my $cache_hash_size      = `cat /sys/module/nf_conntrack/parameters/hashsize`;
@@ -275,17 +279,32 @@ sub generate_conntrackd_config {
   # mode section end
   $output .= "\t$SECTION_END";
 
-  $output .= $MULTICAST_SECTION_START;
-  $output .= "\t\tIPv4_address $mcast_grp\n";
-  $output .= "\t\tGroup 3780\n";
-  $output .= "\t\tIPv4_interface $iponly[0]\n";
-  $output .= "\t\tInterface $intf_name\n";
-  $output .= "\t\tSndSocketBuffer $sync_queue_size\n";
-  $output .= "\t\tRcvSocketBuffer $sync_queue_size\n";
-  $output .= "\t\tChecksum on\n";
-  $output .= get_custom_options("MULTICAST", %custom_options);
-  # multicast section end
-  $output .= "\t$SECTION_END";
+  if ($sync_method eq 'multicast') {
+    $output .= $MULTICAST_SECTION_START;
+    $output .= "\t\tIPv4_address $mcast_grp\n";
+    $output .= "\t\tGroup 3780\n";
+    $output .= "\t\tIPv4_interface $iponly[0]\n";
+    $output .= "\t\tInterface $intf_name\n";
+    $output .= "\t\tSndSocketBuffer $sync_queue_size\n";
+    $output .= "\t\tRcvSocketBuffer $sync_queue_size\n";
+    $output .= "\t\tChecksum on\n";
+    $output .= get_custom_options("MULTICAST", %custom_options);
+    # multicast section end
+    $output .= "\t$SECTION_END";
+
+  } elsif ($sync_method eq 'unicast') {
+    $output .= $UDP_SECTION_START;
+    $output .= "\t\tIPv4_address $udp_listen_addr\n";
+    $output .= "\t\tIPv4_Destination_Address $udp_destination_addr\n";
+    $output .= "\t\tPort 3780\n";
+    $output .= "\t\tInterface $intf_name\n";
+    $output .= "\t\tSndSocketBuffer $sync_queue_size\n";
+    $output .= "\t\tRcvSocketBuffer $sync_queue_size\n";
+    $output .= "\t\tChecksum on\n";
+    $output .= get_custom_options("UDP", %custom_options);
+    # udp section end
+    $output .= "\t$SECTION_END";
+  }
 
   # If any expect-sync protocolis configured, write options section
   if ($expect_sync_configured eq 'true') {
